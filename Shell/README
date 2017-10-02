@@ -1,0 +1,31 @@
+Overview:
+I've created a parser, that intakes user input and stores the input in blocks of commands. The parser first splits the input into a 2D char array, splitting the command when it sees a metacharacter (|,<,>, or &). 
+Once this is parsed into command blocks it gets passed to another function that creates a 3D array containing arrays of strings (each block of commands) so that it can be passed into the execution for multiple piped commands. This also handles the redirection of I/O logic as well as the & logic.
+
+Now that the input has been parsed, and split up into an array of character arrays, where each character array is a command "block" (for instanace ls -l | cat < out.txt would create two entries in the 3D array, one for each "block"). This is now passed into the execution logic where there is a while loop, forking and passing the commands to execvp. There are some complications here, specifically for <, >, and &. These I view as special cases. If the input sees these special metacharacters the execution loop will take special if statements to redirect the input/output or have the command not wait (for &). 
+
+All of these commands, metacharacters, and special cases worked with all of my testing. I've built a pretty robust shell, completing all of the requirements within the assignment. I've also implemented the CTRL+D exit/quit functionality.  
+
+Function Diagram:
+
+1. inputRead()
+	This function reads the input ad stores it into a 2D char array. I've manually implemented this without the use of strtok, and it is very robust and fully functional. This function also does the CTRL+D quit logic. This function outputs the char array.
+
+2. organizeAndExecute()
+	This function reads in the char array created by inputRead(). This then creates a 3D char array in order to split up the functions into seperate array elements to be used later by my execution function. Now we have a 3D array like so: (ls -l | cat < out.txt &    ----> This becomes [[ls,-l],[cat, out.txt]]). If you notice the metacharacters <,>, or & aren't included in this 3D char array. The reason is that I found that it's a cleaner implementation to create flags that indicate if <,>, or & have been entered. Since the project spec says that < can only be during the first command, > can only be the final command, and & can only be last, it made it possible to use my flag implementation. This function doesn't return anything, rather it passes the 3D array directly to the executeCommands function.
+
+3. executeCommands()
+	This function does exactly what it sounds like. This is the brain of the operation. This forks() and creates new children and also does the redirection and & logic. All of this is inside of a while loop that terminates when it hits the NULL after the last command. This allows the piping to work unlimitely and all other metacharacters work as well.
+
+4. main()
+	Calls all the other functions in a while(1) loop so that the shell will keep prompting for input, unless the user exits.
+
+5. Helper: alloc_array()
+	Allocates a 3D char array
+	
+6. Helper: redirect()
+	Redirects file descriptors
+	
+7. Helper: run()
+	Executes the command
+
